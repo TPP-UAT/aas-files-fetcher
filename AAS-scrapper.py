@@ -5,12 +5,13 @@ from bs4 import BeautifulSoup
 import time
 import logging
 import PyPDF2
+import sys
 import random
 
 # All revision from volumes 954 to 932/2 downloaded
 base_url = 'https://iopscience.iop.org'
-initial_url = "https://iopscience.iop.org/issue/2041-8205/932/1"
-final_volume = '928'
+initial_url = "https://iopscience.iop.org/issue/0004-637X/951/1"
+final_volume = '900'
 
 #If there is no such folder, the script will create one automatically
 downloads_folder_location = r'./webscraping'
@@ -27,20 +28,8 @@ log = logging.getLogger('my_logger')
 amount_downloaded = 0
 
 # Headers info
-cookie_page = '__uzma=250512ea-6c1e-40bf-8e6e-478a89ef6011; __uzmb=1693769734; __uzme=5358; __uzmc=921651035608; __uzmd=1693769734; AWSALB=cNaYVDFWQ5BVqjh1alDPopskEPh0ydidZpVgI8bxm6aB7NoB920sGVV7+wLDcBfFzH3ojgUC3i/N+cjRvm+fc/6n+TOn4FsZvbnKrRjeXT2ic35V/P5aUCmmzmMx; AWSALBCORS=cNaYVDFWQ5BVqjh1alDPopskEPh0ydidZpVgI8bxm6aB7NoB920sGVV7+wLDcBfFzH3ojgUC3i/N+cjRvm+fc/6n+TOn4FsZvbnKrRjeXT2ic35V/P5aUCmmzmMx; JSESSIONID=0AEE3D1229D3E12E2B5AEAE8ECBB5F3C; IOP_session_live=%2F%2F1693769735119%7C99c5ffa6-a19a-4604-a73f-af1a564c674d%7C05292692-e03a-4bed-835a-a18564f6a68d%7C%7C%7C%7C%7C%7C%7C%7C%7Cguest%2F8cb22c50956eb682405e1e462b965959; _ga_XRBV54S80C=GS1.1.1693769736.1.0.1693769736.0.0.0; _ga=GA1.2.797773494.1693769737; _gid=GA1.2.80733584.1693769737; _gat_UA-2254461-36=1; cebs=1; _hjSessionUser_209243=eyJpZCI6IjhjZmFjNTY0LTIyNmYtNWUyOC05NDA4LTIzNWIyMTljYzI0YyIsImNyZWF0ZWQiOjE2OTM3Njk3MzY4NDQsImV4aXN0aW5nIjpmYWxzZX0=; _hjFirstSeen=1; _hjIncludedInSessionSample_209243=0; _hjSession_209243=eyJpZCI6ImVjNDdhODRjLWMzN2ItNDg0Zi1hNGQ1LTdjYzlmNmQ3NmVlMCIsImNyZWF0ZWQiOjE2OTM3Njk3MzY4NDUsImluU2FtcGxlIjpmYWxzZX0=; _hjAbsoluteSessionInProgress=0; _ce.clock_event=1; _ce.clock_data=105%2C181.23.196.40%2C1%2C6d797a3d21eb30c3af058ab3a2bf562d; cebsp_=1; _ce.s=v11.lhb~1693769737672~lcw~1693769737672~v~2ad825add0612d36c1c7036a39e7b427eafd4c11~vpv~0~v11.fhb~1693769737671~lcw~1693769737673'
-cookie_pdf = '__uzma=250512ea-6c1e-40bf-8e6e-478a89ef6011; __uzmb=1693769734; __uzme=5358; JSESSIONID=0AEE3D1229D3E12E2B5AEAE8ECBB5F3C; IOP_session_live=%2F%2F1693769735119%7C99c5ffa6-a19a-4604-a73f-af1a564c674d%7C05292692-e03a-4bed-835a-a18564f6a68d%7C%7C%7C%7C%7C%7C%7C%7C%7Cguest%2F8cb22c50956eb682405e1e462b965959; _gid=GA1.2.80733584.1693769737; _gat_UA-2254461-36=1; cebs=1; _hjFirstSeen=1; _hjIncludedInSessionSample_209243=0; _hjSession_209243=eyJpZCI6ImVjNDdhODRjLWMzN2ItNDg0Zi1hNGQ1LTdjYzlmNmQ3NmVlMCIsImNyZWF0ZWQiOjE2OTM3Njk3MzY4NDUsImluU2FtcGxlIjpmYWxzZX0=; _hjAbsoluteSessionInProgress=0; _ce.clock_event=1; _ce.clock_data=105%2C181.23.196.40%2C1%2C6d797a3d21eb30c3af058ab3a2bf562d; _ga=GA1.2.797773494.1693769737; _hjSessionUser_209243=eyJpZCI6IjhjZmFjNTY0LTIyNmYtNWUyOC05NDA4LTIzNWIyMTljYzI0YyIsImNyZWF0ZWQiOjE2OTM3Njk3MzY4NDQsImV4aXN0aW5nIjp0cnVlfQ==; cebsp_=2; _ce.s=v11.lhb~1693769754814~lcw~1693769737673~v~2ad825add0612d36c1c7036a39e7b427eafd4c11~vpv~0~v11.fhb~1693769737671~lcw~1693769754815; _ga_XRBV54S80C=GS1.1.1693769736.1.1.1693769777.0.0.0; __uzmc=713511675035; __uzmd=1693769776; AWSALB=6WMtbq94orqcGWnYDnAOQL4UHrXC/6wObgeXjviJs+wSITL1+kszBXbZ+oLOE2Sr9LSt+A88i7+omzz1AvVdFeFGpKhIc1lmh+OHaP3YcZ3CQb6NEHUyGSBY+37V; AWSALBCORS=6WMtbq94orqcGWnYDnAOQL4UHrXC/6wObgeXjviJs+wSITL1+kszBXbZ+oLOE2Sr9LSt+A88i7+omzz1AvVdFeFGpKhIc1lmh+OHaP3YcZ3CQb6NEHUyGSBY+37V'
-
-# Different agents for requests
-agents = [
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36', 
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-]
+cookie_page = '__uzma=1e5e2d89-a460-4256-8f3a-0aa59a2b5299; __uzmb=1695679366; __uzme=1851; JSESSIONID=26CF35F22C924DA3AD160102B8FD56DD; _hjFirstSeen=1; _hjIncludedInSessionSample_209243=0; _hjSession_209243=eyJpZCI6ImJkZTc3MTM0LWE5ZTUtNGIwMi04NjgzLTUxN2VmYmQ4YmMwZSIsImNyZWF0ZWQiOjE2OTU2NzkzNjk0OTAsImluU2FtcGxlIjpmYWxzZX0=; _hjAbsoluteSessionInProgress=0; _gid=GA1.2.1079881102.1695679370; _gat_UA-2254461-36=1; cebs=1; _ce.clock_event=1; _ce.clock_data=76%2C181.23.209.37%2C1%2C6d797a3d21eb30c3af058ab3a2bf562d; IOP_prod_state=b3cd5c19110bbef8d36f83d159134b12b74b4acb5d7a1014eb7addf6778f29b498f8c9d0e595c0837fe1b4efee592dbf5a9877beb561bcb0fad695e10e0e16dbe144eea3ce5af1c5d001ed597f8a7a94c03e56a470596ee25d99be8cd148dc520f07dfa7397c3ec64b716feaf262dfc484cf81aba6f0e8ab572aae; access_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlJrUTFORFZGTUVJek5rTXhOMEpCTVRnMFJqazFNMEV5TXpFME56SkZOVEF6UVRrMVFVRkNPUSJ9.eyJodHRwczovL2lvcHAub3JnL2VuY3J5cHRlZCI6ImY4NzlhODczOGNlN2I2NDNjZTMyYzI2NGNmYzUzNDFhM2NmMzJiYWU3MDVkZGY2N2QwNGQyNmRjYWFjYmY4OWNiYzM1NDdiZTYwZTEwYmMwNWE1ODZiYjM1NjU0NDlkNTNkZGZhYTU2NzIzODA1M2FiZDAyOTY4OGQwMTIyOTJlYmQzNDc1MzY4ZDEzOTllZjExZWNiYTk2MTc4OTk1YWZhMGI1YzBmZTk2ZjEyMTcwOTk5Y2Y2MDNjNGNlY2FkZWUwMzZiM2JjOTE2YWE4NjAwMjE5ZTE1NTllMTI1MTcyIiwiaXNzIjoiaHR0cHM6Ly9hdXRoLm15aW9wc2NpZW5jZS5pb3Aub3JnLyIsInN1YiI6ImF1dGgwfDY0ZjMzMWY3MDU1ZGZkZjVjZWZlMjFhMCIsImF1ZCI6WyJodHRwczovL3NlY3VyZWxvZ2luLmNsZC5pb3Aub3JnIiwiaHR0cHM6Ly9teWlvcHNjaWVuY2UuZXUuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTY5NTY3OTM4MCwiZXhwIjoxNjk1NzY1NzgwLCJhenAiOiJDRjJZSlF6NkI1VnQxU3ppQklHRzBlVklmMHlkQzVVSyIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUiLCJwZXJtaXNzaW9ucyI6W119.kFm_Up6G0G0e9kM8c35K8a7jqdpWLu6i_ix4SXHyaPXSK4vflMzfRp982ec2Mkt6GOuUi7gZfNcpbxOTcL3wV3zHMhMNh57OQkabnWl0Eyw6sn_b7FyJLXUqe0Cdy4cVZ5QErwbHF-7QqJnHadqrIBX8ZeGyNfZ69Mwv2mXyGzmbA_T09pM8mlv7WQuURprulE0X_ccBMsHHUP2T-KXINYvO8jGfte6PS2_Njh1D0OQ5wfxAMM3iDL2AGSvFV8tzimlvRXEQOkBATLxbkUkEQnBs7tXSs-giaualAGWovbdzliVsMnGWNys0e1BsmQXyHQwZU1aJWgScjB-NHzgUKQ; IOP_session_live=cn%253Dauth0%257C64f331f7055dfdf5cefe21a0%252C%2F%2F1695679381051%7Ceef20c4e-87ba-49d1-b825-ec708a86f9fe%7C8b2b2d51-085f-4e29-a90a-1f0e88918c1f%7C%7C%7C%7C%7C%7C%7C%7C%7Cguest%2F8f145fe4ad1e882bd83ea2484d5408f7; __uzmc=128251388996; __uzmd=1695679381; AWSALB=g6qgAeIoY65X2QmflxHLM3ZuxuZpz++RnrdTsFCIc0EMlKCg7IjBTZ/y2LKfe5NQeUeBbrq9YnF98I6Ufx/4JSHYnSUZ+UKH0EdzGtrKLgREqUuw51JvMmZ+cbPu; AWSALBCORS=g6qgAeIoY65X2QmflxHLM3ZuxuZpz++RnrdTsFCIc0EMlKCg7IjBTZ/y2LKfe5NQeUeBbrq9YnF98I6Ufx/4JSHYnSUZ+UKH0EdzGtrKLgREqUuw51JvMmZ+cbPu; _ga_XRBV54S80C=GS1.1.1695679369.1.1.1695679383.0.0.0; _ga=GA1.2.967314126.1695679369; _hjSessionUser_209243=eyJpZCI6IjExM2Q3YWFhLTBjZmQtNWQ0YS04ODllLWJjZWQ0M2M4ZmZlMSIsImNyZWF0ZWQiOjE2OTU2NzkzNjk0ODksImV4aXN0aW5nIjp0cnVlfQ==; cebsp_=2; _ce.s=v~c9f0822c83a7a4310b373eaaa02887cd6b9196b9~lcw~1695679370253~vpv~0~v11.fhb~1695679370252~v11.lhb~1695679384132~lcw~1695679384133'
+cookie_pdf = '__uzma=1e5e2d89-a460-4256-8f3a-0aa59a2b5299; __uzmb=1695679366; __uzme=1851; JSESSIONID=26CF35F22C924DA3AD160102B8FD56DD; _hjFirstSeen=1; _hjIncludedInSessionSample_209243=0; _hjSession_209243=eyJpZCI6ImJkZTc3MTM0LWE5ZTUtNGIwMi04NjgzLTUxN2VmYmQ4YmMwZSIsImNyZWF0ZWQiOjE2OTU2NzkzNjk0OTAsImluU2FtcGxlIjpmYWxzZX0=; _hjAbsoluteSessionInProgress=0; _gid=GA1.2.1079881102.1695679370; _gat_UA-2254461-36=1; cebs=1; _ce.clock_event=1; _ce.clock_data=76%2C181.23.209.37%2C1%2C6d797a3d21eb30c3af058ab3a2bf562d; IOP_prod_state=b3cd5c19110bbef8d36f83d159134b12b74b4acb5d7a1014eb7addf6778f29b498f8c9d0e595c0837fe1b4efee592dbf5a9877beb561bcb0fad695e10e0e16dbe144eea3ce5af1c5d001ed597f8a7a94c03e56a470596ee25d99be8cd148dc520f07dfa7397c3ec64b716feaf262dfc484cf81aba6f0e8ab572aae; access_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlJrUTFORFZGTUVJek5rTXhOMEpCTVRnMFJqazFNMEV5TXpFME56SkZOVEF6UVRrMVFVRkNPUSJ9.eyJodHRwczovL2lvcHAub3JnL2VuY3J5cHRlZCI6ImY4NzlhODczOGNlN2I2NDNjZTMyYzI2NGNmYzUzNDFhM2NmMzJiYWU3MDVkZGY2N2QwNGQyNmRjYWFjYmY4OWNiYzM1NDdiZTYwZTEwYmMwNWE1ODZiYjM1NjU0NDlkNTNkZGZhYTU2NzIzODA1M2FiZDAyOTY4OGQwMTIyOTJlYmQzNDc1MzY4ZDEzOTllZjExZWNiYTk2MTc4OTk1YWZhMGI1YzBmZTk2ZjEyMTcwOTk5Y2Y2MDNjNGNlY2FkZWUwMzZiM2JjOTE2YWE4NjAwMjE5ZTE1NTllMTI1MTcyIiwiaXNzIjoiaHR0cHM6Ly9hdXRoLm15aW9wc2NpZW5jZS5pb3Aub3JnLyIsInN1YiI6ImF1dGgwfDY0ZjMzMWY3MDU1ZGZkZjVjZWZlMjFhMCIsImF1ZCI6WyJodHRwczovL3NlY3VyZWxvZ2luLmNsZC5pb3Aub3JnIiwiaHR0cHM6Ly9teWlvcHNjaWVuY2UuZXUuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTY5NTY3OTM4MCwiZXhwIjoxNjk1NzY1NzgwLCJhenAiOiJDRjJZSlF6NkI1VnQxU3ppQklHRzBlVklmMHlkQzVVSyIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUiLCJwZXJtaXNzaW9ucyI6W119.kFm_Up6G0G0e9kM8c35K8a7jqdpWLu6i_ix4SXHyaPXSK4vflMzfRp982ec2Mkt6GOuUi7gZfNcpbxOTcL3wV3zHMhMNh57OQkabnWl0Eyw6sn_b7FyJLXUqe0Cdy4cVZ5QErwbHF-7QqJnHadqrIBX8ZeGyNfZ69Mwv2mXyGzmbA_T09pM8mlv7WQuURprulE0X_ccBMsHHUP2T-KXINYvO8jGfte6PS2_Njh1D0OQ5wfxAMM3iDL2AGSvFV8tzimlvRXEQOkBATLxbkUkEQnBs7tXSs-giaualAGWovbdzliVsMnGWNys0e1BsmQXyHQwZU1aJWgScjB-NHzgUKQ; IOP_session_live=cn%253Dauth0%257C64f331f7055dfdf5cefe21a0%252C%2F%2F1695679381051%7Ceef20c4e-87ba-49d1-b825-ec708a86f9fe%7C8b2b2d51-085f-4e29-a90a-1f0e88918c1f%7C%7C%7C%7C%7C%7C%7C%7C%7Cguest%2F8f145fe4ad1e882bd83ea2484d5408f7; _hjSessionUser_209243=eyJpZCI6IjExM2Q3YWFhLTBjZmQtNWQ0YS04ODllLWJjZWQ0M2M4ZmZlMSIsImNyZWF0ZWQiOjE2OTU2NzkzNjk0ODksImV4aXN0aW5nIjp0cnVlfQ==; __uzmc=116431675915; __uzmd=1695679386; AWSALB=rO6KYqUOZXwEQ2vfxGvAmxwAo1M+6//8iJEG0hWcyQpFrA47CaEcgfC1CgSnNzrDLKOgo3OjrEOs2x6LW0XsoYKV6PQoKbSVC5kNdgybYcCsoAy8xN6xunjLyQHH; AWSALBCORS=rO6KYqUOZXwEQ2vfxGvAmxwAo1M+6//8iJEG0hWcyQpFrA47CaEcgfC1CgSnNzrDLKOgo3OjrEOs2x6LW0XsoYKV6PQoKbSVC5kNdgybYcCsoAy8xN6xunjLyQHH; _ga=GA1.2.967314126.1695679369; cebsp_=3; _ce.s=v~c9f0822c83a7a4310b373eaaa02887cd6b9196b9~lcw~1695679384133~vpv~0~v11.fhb~1695679370252~v11.lhb~1695679389832~lcw~1695679389833; _ga_XRBV54S80C=GS1.1.1695679369.1.1.1695679402.0.0.0'
 
 # It takes a really long time to make this check, in the meantime can fail the request because of cookies
 def requested_captcha(content, pdf_url):
@@ -53,15 +42,16 @@ def requested_captcha(content, pdf_url):
         return True
     return False
 
-def check_for_captcha(filename):
+def check_for_captcha(filename, count_downloaded, total_page):
     try:
         with open(filename, 'rb') as f:
             PyPDF2.PdfReader(f)
     except Exception as e:
-        log.error(f"Failed to download {filename}: {e}")
-        print(f"Failed to download {filename}")
+        log.error(f"Failed to download {filename}: {e}. Missing: {total_page - count_downloaded}")
+        print(f"Failed to download {filename}. Missing: {total_page - count_downloaded}")
+        sys.exit(1)
 
-def download_pdf(pdf_url, folder_location):
+def download_pdf(pdf_url, folder_location, count_downloaded, total_page):
     # random_number = random.randint(0, 8)
     headers = {
         'authority': 'iopscience.iop.org',
@@ -91,7 +81,7 @@ def download_pdf(pdf_url, folder_location):
             request_content = response.content
             with open(file_path, 'wb') as f:
                 f.write(request_content)
-            check_for_captcha(file_path)
+            check_for_captcha(file_path, count_downloaded, total_page)
     
     except requests.exceptions.Timeout:
         log.error(f"Request timed out for URL: {pdf_url}. Stopping.")
@@ -100,12 +90,13 @@ def download_pdf(pdf_url, folder_location):
         log.error(f"An unexpected error occurred for URL {pdf_url}: {e}")
         failed_urls.append(pdf_url)
 
-def download_pdfs(pdfs_urls, folder_location):
+def download_pdfs(pdfs_urls, folder_location, count_downloaded, total_page):
     for pdf_url in pdfs_urls:
         log.debug(f"Downloading pdf from url: {pdf_url}")
-        download_pdf(pdf_url, folder_location)
+        download_pdf(pdf_url, folder_location, count_downloaded, total_page)
         global amount_downloaded
         amount_downloaded += 1
+        count_downloaded += 1
         log.debug("Finished downloading pdf")
         log.debug("------------------------")
         time.sleep(5)
@@ -152,6 +143,7 @@ def create_folder_path_for_page(page_url):
     return folder_location
 
 def get_all_files_from_page(page_html_object, page_url):
+    count_downloaded = 0
     # Create the folder for the page
     folder_location = create_folder_path_for_page(page_url)
 
@@ -161,7 +153,7 @@ def get_all_files_from_page(page_html_object, page_url):
     log.debug(f"Urls from page: {pdfs_urls}\n")
 
     # Download the pdfs
-    download_pdfs(pdfs_urls, folder_location)
+    download_pdfs(pdfs_urls, folder_location, count_downloaded, len(pdfs_urls))
 
 def get_all_files_from_pages():
     page_url = initial_url
