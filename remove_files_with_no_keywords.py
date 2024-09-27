@@ -13,7 +13,10 @@ regex = r'Uniﬁed Astronomy Thesaurus concepts:\s*((?:[^;)]+\(\d+\);\s*)+[^;)]+
 # Compile the regex pattern for efficiency
 pattern = re.compile(regex)
 
-def file_contains_regex(file_path, pattern):
+# Phrase to check for
+phrase_to_check = "Uniﬁed Astronomy Thesaurus concepts:"
+
+def file_contains_regex(file_path, pattern, phrase):
     """Check if the file contains the regex pattern in its text."""
     try:
         # Open the PDF file
@@ -26,7 +29,8 @@ def file_contains_regex(file_path, pattern):
         pdf_document.close()
         
         # Check if the text matches the regex pattern
-        return pattern.search(text) is not None
+        return phrase in text
+        #return pattern.search(text) is not None
     except Exception as e:
         logging.error(f"Error processing file {file_path}: {e}")
         return False
@@ -38,7 +42,7 @@ def process_folder(folder_path):
         for filename in files:
             if filename.lower().endswith('.pdf'):
                 file_path = os.path.join(root, filename)
-                if not file_contains_regex(file_path, pattern):
+                if not file_contains_regex(file_path, pattern, phrase_to_check):
                     # If the regex does not match, delete the file
                     try:
                         os.remove(file_path)
